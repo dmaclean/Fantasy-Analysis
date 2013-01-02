@@ -1,4 +1,4 @@
-drop table player;
+drop table players;
 create table players (
 	id int not null primary key,
 	name varchar(100) not null,
