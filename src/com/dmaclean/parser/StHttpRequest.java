@@ -51,15 +51,18 @@ private static final Logger log = Logger.getLogger(StHttpRequest.class.getPackag
                      consumer.sign(uc);  
                        
                  } catch (OAuthMessageSignerException e) {  
-                     log.severe("Error signing the consumer");  
+                     log.severe("Error signing the consumer");
+                     e.printStackTrace();
                      throw e;  
   
                  } catch (OAuthExpectationFailedException e) {  
-                 log.severe("Error signing the consumer");  
-                 throw e;  
+                	 log.severe("Error signing the consumer");
+                	 e.printStackTrace();
+                	 throw e;  
                    
                  } catch (OAuthCommunicationException e) {  
-                 log.severe("Error signing the consumer");  
+                 log.severe("Error signing the consumer");
+                 e.printStackTrace();
                  throw e;  
                  }  
                  uc.connect();  
