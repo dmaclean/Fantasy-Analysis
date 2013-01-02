@@ -23,15 +23,15 @@ public class PlayerSeasonStats {
 	
 	private static final Logger logger = Logger.getLogger(PlayerSeasonStats.class.getPackage().getName());
 
-	private int playerId;
-	private int year;
-	private Stat stat;
+	protected int playerId;
+	protected int year;
+	protected Stat stat;
 	
 	public PlayerSeasonStats() {
 		stat = new Stat();
 	}
 	
-	public void parsePlayerSeasonStats(String json) throws JSONException {
+	public void parsePlayerStats(String json) throws JSONException {
 		JSONObject root = new JSONObject(json);
 		JSONObject fc = root.getJSONObject("fantasy_content");
 		JSONArray player = fc.getJSONArray("player");
@@ -92,7 +92,7 @@ public class PlayerSeasonStats {
 					PlayerSeasonStats pss = new PlayerSeasonStats();
 					pss.setPlayerId(id);
 					pss.setYear(year);
-					pss.parsePlayerSeasonStats(httpRequest.getResponseBody());
+					pss.parsePlayerStats(httpRequest.getResponseBody());
 					pss.save(conn);
 				} else {
 					logger.severe("Error in response due to status code = " + responseCode);
