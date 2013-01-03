@@ -5,6 +5,7 @@ import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.logging.Logger;
@@ -109,6 +110,56 @@ public class PlayerWeekStats extends PlayerSeasonStats {
 		}
 	}
 	
+	/**
+	 * Retrieves the PlayerWeekStats object from the database that matches the id/year/week combo.
+	 * 
+	 * @param id		Player id
+	 * @param year		Season
+	 * @param week		Week
+	 * @param conn
+	 * @return
+	 */
+	public static PlayerWeekStats get(int id, int year, int week, Connection conn) {
+		PreparedStatement pstmt = null;
+		ResultSet rs = null;
+		PlayerWeekStats pws = new PlayerWeekStats();
+		
+		try {
+			pstmt = conn.prepareStatement("select * from player_week_stats where player_id = ? and year = ? and week = ?");
+			pstmt.setInt(1, id);
+			pstmt.setInt(2, year);
+			pstmt.setInt(3, week);
+			rs = pstmt.executeQuery();
+			
+			if(rs.next()) {
+				pws.setPlayerId(rs.getInt("player_id"));
+				pws.setYear(rs.getInt("year"));
+				pws.setWeek(rs.getInt("week"));
+				
+				Stat stat = new Stat();
+				stat.get(rs.getInt("stat_id"), conn);
+				
+				pws.setStat(stat);
+			}
+		}
+		catch(SQLException e) {
+			logger.severe(e.getMessage());
+			e.printStackTrace();
+		}
+		finally {
+			try {
+				pstmt.close();
+				rs.close();
+			}
+			catch(SQLException e) {
+				logger.severe(e.getMessage());
+				e.printStackTrace();
+			}
+		}
+		
+		return pws;
+	}
+	
 	public void save(Connection conn) {
 		PreparedStatement pstmt = null;
 		
@@ -119,6 +170,33 @@ public class PlayerWeekStats extends PlayerSeasonStats {
 			pstmt.setInt(2, stat.getId());
 			pstmt.setInt(3, year);
 			pstmt.setInt(4, week);
+			
+			pstmt.execute();
+		}
+		catch(SQLException e) {
+			logger.severe(e.getMessage());
+			e.printStackTrace();
+		}
+		finally {
+			try {
+				pstmt.close();
+			}
+			catch(SQLException e) {
+				logger.severe(e.getMessage());
+				e.printStackTrace();
+			}
+		}
+	}
+	
+	public void delete(Connection conn) {
+		PreparedStatement pstmt = null;
+		
+		try {
+			stat.delete(stat.getId(), conn);
+			pstmt = conn.prepareStatement("delete from player_week_stats where player_id = ? and year = ? and week = ?");
+			pstmt.setInt(1, playerId);
+			pstmt.setInt(2, year);
+			pstmt.setInt(3, week);
 			
 			pstmt.execute();
 		}
