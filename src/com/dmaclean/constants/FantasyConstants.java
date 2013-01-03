@@ -3,24 +3,55 @@ package com.dmaclean.constants;
 import java.util.HashMap;
 
 public class FantasyConstants {
+	/**
+	 * Translation table between the Fantasy year and the Yahoo code representing that year.
+	 */
 	public static HashMap<Integer, String> yearToCode;
 	static {
-		yearToCode = new HashMap<Integer, String>();
+		yearToCode = new HashMap<Integer, String>(20);
+		yearToCode.put(2001, "57");
+		yearToCode.put(2002, "49");
+		yearToCode.put(2003, "79");
+		yearToCode.put(2004, "101");
+		yearToCode.put(2005, "124");
+		yearToCode.put(2006, "153");
+		yearToCode.put(2007, "175");
+		yearToCode.put(2008, "199");
 		yearToCode.put(2009, "223");
-		yearToCode.put(2012, "nfl");
+		yearToCode.put(2010, "242");
+		yearToCode.put(2011, "257");
+		yearToCode.put(2012, "273");
 	}
 	
+	/**
+	 * Association table to keep track of the public league we're gathering player data from for
+	 * each fantasy year.
+	 */
 	public static HashMap<Integer, String> yearToLeagueKey;
 	static {
 		yearToLeagueKey = new HashMap<Integer, String>(20);
+		yearToLeagueKey.put(2001, yearToCode.get(2001) + ".l.431");
+		yearToLeagueKey.put(2002, yearToCode.get(2002) + ".l.431");
+		yearToLeagueKey.put(2003, yearToCode.get(2003) + ".l.433");
+		yearToLeagueKey.put(2004, yearToCode.get(2004) + ".l.436");
+		yearToLeagueKey.put(2005, yearToCode.get(2005) + ".l.431");
+		yearToLeagueKey.put(2006, yearToCode.get(2006) + ".l.436");
+		yearToLeagueKey.put(2007, yearToCode.get(2007) + ".l.436");
+		yearToLeagueKey.put(2008, yearToCode.get(2008) + ".l.437");
 		yearToLeagueKey.put(2009, yearToCode.get(2009) + ".l.431");
+		yearToLeagueKey.put(2010, yearToCode.get(2010) + ".l.439");
+		yearToLeagueKey.put(2011, yearToCode.get(2011) + ".l.450");
 		yearToLeagueKey.put(2012, yearToCode.get(2012) + ".l.56212");
 	}
 	
-	// Please provide your consumer key here
+	/**
+	 * Consumer key for OAuth
+	 */
 	public static final String consumer_key = "dj0yJmk9Y2RLeUNiTkdPeUxTJmQ9WVdrOVozZzRjSGhETTJNbWNHbzlOemt6TnpNMk1nLS0mcz1jb25zdW1lcnNlY3JldCZ4PWYy";
 
-	// Please provide your consumer secret here
+	/**
+	 * Consumer secret for OAuth
+	 */
 	public static final String consumer_secret = "86712de54c4479c386538e80520269970a7db725";
 	
 	public static final int HTTP_RESPONSE_OK = 200;
