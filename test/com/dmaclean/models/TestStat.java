@@ -21,6 +21,8 @@ public class TestStat {
 	
 	@Before
 	public void setUp() throws Exception {
+		FantasyTestUtils.resetTestDatabase();
+		
 		stat = new Stat();
 	}
 
@@ -81,6 +83,7 @@ public class TestStat {
 			}
 		} catch (Exception e) {
 			e.printStackTrace();
+			fail(e.getMessage());
 		}
 		finally {
 			try {
