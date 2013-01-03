@@ -8,6 +8,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.logging.Logger;
 
 import oauth.signpost.OAuthConsumer;
@@ -40,20 +41,34 @@ public class PlayerWeekStats extends PlayerSeasonStats {
 		// Set the HTTP request correctly
 		httpRequest.setOAuthConsumer(consumer);
 		
+		/*
+		 * Create a list of all player-id/week combos
+		 */
+		HashMap<Integer, ArrayList<Integer>> exclusions = findRowsToExclude(year, conn);
+		long start = System.currentTimeMillis();
 		ArrayList<ArrayList<Integer>> idsWeeks = new ArrayList<ArrayList<Integer>>();
 		for(int id=0; id<ids.size(); id++) {
-			if(ids.get(id)<8835) continue;
+			ArrayList<Integer> currExclusions = exclusions.get(ids.get(id));
+			
 			for(int week=1; week<18; week++) {
+				if(currExclusions != null && currExclusions.contains(week))
+					continue;
+				
 				ArrayList<Integer> l = new ArrayList<Integer>(2);
 				l.add(ids.get(id));
 				l.add(week);
 				idsWeeks.add(l);
 			}
 		}
+		long end = System.currentTimeMillis();
+		logger.info("Determining remaining player-id/week combos took " + (end-start)/1000.0 + " seconds.");
+		
+		/*
+		 * Get list of all player-id/week combos that we've already processed for the specified year.  Then, remove these
+		 * from the idsWeeks list.
+		 */
 		
 		try {
-//			for(Integer id : ids) {
-//				for(int week=1; week<18; week++) {
 			while(!idsWeeks.isEmpty()) {
 				int id = idsWeeks.get(0).get(0);
 				int week = idsWeeks.get(0).get(1);
@@ -213,6 +228,58 @@ public class PlayerWeekStats extends PlayerSeasonStats {
 				e.printStackTrace();
 			}
 		}
+	}
+	
+	/**
+	 * Determines which combinations of player-id/week for a given year have already been processed.
+	 * 
+	 * @param year
+	 * @param conn
+	 * @return
+	 */
+	private static HashMap<Integer, ArrayList<Integer>> findRowsToExclude(int year, Connection conn) {
+		long start = System.currentTimeMillis();
+		
+		HashMap<Integer, ArrayList<Integer>> exclusions = new HashMap<Integer, ArrayList<Integer>>(500);
+		
+		PreparedStatement pstmt = null;
+		ResultSet rs = null;
+		
+		try {
+			pstmt = conn.prepareStatement("select player_id, week from player_week_stats where year = ?");
+			pstmt.setInt(1, year);
+			
+			rs = pstmt.executeQuery();
+			
+			while(rs.next()) {
+				int playerId = rs.getInt("player_id");
+				int week = rs.getInt("week");
+				
+				if(!exclusions.containsKey(playerId)) {
+					exclusions.put(playerId, new ArrayList<Integer>());
+				}
+				
+				exclusions.get(playerId).add(week);
+			}
+		}
+		catch(SQLException e) {
+			logger.severe(e.getMessage());
+			e.printStackTrace();
+		}
+		finally {
+			try {
+				pstmt.close();
+			}
+			catch(SQLException e) {
+				logger.severe(e.getMessage());
+				e.printStackTrace();
+			}
+		}
+		
+		long end = System.currentTimeMillis();
+		logger.info("findRowsToExclude took " + (end-start)/1000.0 + " seconds.");
+		
+		return exclusions;
 	}
 	
 	public int getWeek() {
