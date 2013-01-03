@@ -7,6 +7,14 @@ public class FantasyConstants {
 	static {
 		yearToCode = new HashMap<Integer, String>();
 		yearToCode.put(2009, "223");
+		yearToCode.put(2012, "nfl");
+	}
+	
+	public static HashMap<Integer, String> yearToLeagueKey;
+	static {
+		yearToLeagueKey = new HashMap<Integer, String>(20);
+		yearToLeagueKey.put(2009, yearToCode.get(2009) + ".l.431");
+		yearToLeagueKey.put(2012, yearToCode.get(2012) + ".l.56212");
 	}
 	
 	// Please provide your consumer key here
