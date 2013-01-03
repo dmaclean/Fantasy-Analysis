@@ -158,6 +158,8 @@ public class Player {
 	}
 	
 	public static ArrayList<Integer> getAllPlayerIds(Connection conn) {
+		long start = System.currentTimeMillis();
+		
 		ArrayList<Integer> ids = new ArrayList<Integer>();
 		
 		PreparedStatement pstmt = null;
@@ -185,6 +187,9 @@ public class Player {
 				e.printStackTrace();
 			}
 		}
+		
+		long end = System.currentTimeMillis();
+		logger.info("getAllPlayerIds took " + (end-start)/1000.0 + " seconds.");
 		
 		return ids;
 	}
