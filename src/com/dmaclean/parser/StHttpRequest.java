@@ -51,17 +51,17 @@ private static final Logger log = Logger.getLogger(StHttpRequest.class.getPackag
                      consumer.sign(uc);  
                        
                  } catch (OAuthMessageSignerException e) {  
-                     log.severe("Error signing the consumer");
+                     log.severe("Error signing the consumer - " + e.getMessage());
                      e.printStackTrace();
                      throw e;  
   
                  } catch (OAuthExpectationFailedException e) {  
-                	 log.severe("Error signing the consumer");
+                	 log.severe("Error signing the consumer - " + e.getMessage());
                 	 e.printStackTrace();
                 	 throw e;  
                    
                  } catch (OAuthCommunicationException e) {  
-                 log.severe("Error signing the consumer");
+                 log.severe("Error signing the consumer - " + e.getMessage());
                  e.printStackTrace();
                  throw e;  
                  }  
@@ -69,8 +69,9 @@ private static final Logger log = Logger.getLogger(StHttpRequest.class.getPackag
              }  
              return uc;  
      } catch (IOException e) {  
-     log.severe("Error signing the consumer");  
-     throw e;  
+    	 log.severe("Error signing the consumer - " + e.getMessage());  
+    	 e.printStackTrace();
+    	 throw e;  
      }  
     }  
       
