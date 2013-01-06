@@ -56,17 +56,8 @@ public class Player {
 		}
 	}
 	
-	public void parsePlayerSeasonStats() throws JSONException {
-		JSONObject playerStats = player.getJSONObject(1);
-		
-	}
-	
 	public static void retrieveAllPlayersForYear(int year, Connection conn) {
 		StHttpRequest httpRequest = new StHttpRequest();
-		
-		String yahooServer = "http://fantasysports.yahooapis.com/fantasy/v2/league/223.l.431/players;start={start}/stats?format=json";
-		// Create final URL
-		String url = yahooServer;// + params;
 		
 		// Create oAuth Consumer 
 		OAuthConsumer consumer = new DefaultOAuthConsumer(FantasyConstants.consumer_key, FantasyConstants.consumer_secret);
@@ -80,23 +71,37 @@ public class Player {
 		try {
 			do {
 				start = (count == -1) ? 0 : start + count;
-				url = yahooServer.replace("{start}", "" + start);
+				// Create final URL
+				String url = FantasyConstants.URL_SEASON_ALL_PLAYERS;
+				url = url.replace("{start}", "" + start);
+				url = url.replace("{league_key}", FantasyConstants.yearToLeagueKey.get(year));
 				
-				logger.info("sending get request to" + URLDecoder.decode(url, "UTF-8"));
-				int responseCode = httpRequest.sendGetRequest(url); 
-				
-				// Send the request
-				if(responseCode == FantasyConstants.HTTP_RESPONSE_OK) {
-					logger.info("Response ");
-				} else {
-					logger.severe("Error in response due to status code = " + responseCode);
+				int responseCode = -1;
+				while(responseCode != FantasyConstants.HTTP_RESPONSE_OK) {
+					logger.info("sending get request to" + URLDecoder.decode(url, "UTF-8"));
+					responseCode = httpRequest.sendGetRequest(url); 
+					
+					// Send the request
+					if(responseCode == FantasyConstants.HTTP_RESPONSE_OK) {
+						logger.info("Response - " + httpRequest.getResponseBody());
+					} else if(responseCode == 999) {
+						logger.severe("Error in response due to status code = " + responseCode + ".  Sleeping 30 minutes");
+						try {
+							Thread.sleep(1000*60*30);
+						}
+						catch(InterruptedException e) {
+							logger.severe(e.getMessage());
+							e.printStackTrace();
+						}
+					} else {
+						logger.severe("Error in response due to status code = " + responseCode);
+					}
 				}
-				logger.info(httpRequest.getResponseBody());
 				
 				JSONObject json = new JSONObject(httpRequest.getResponseBody());
 				JSONObject fantasyContent = json.getJSONObject("fantasy_content");
 				JSONArray league = fantasyContent.getJSONArray("league");
-				JSONObject leagueInfo = league.getJSONObject(0);
+//				JSONObject leagueInfo = league.getJSONObject(0);
 				JSONObject players = league.getJSONObject(1);
 				JSONObject players2 = players.getJSONObject("players");
 				count = players2.getInt("count");
@@ -104,14 +109,19 @@ public class Player {
 				for(int i=0; i<count; i++) {
 					JSONObject o = players2.getJSONObject("" + i);
 					JSONArray a = o.getJSONArray("player");
-	//				JSONArray playerInfo = a.getJSONArray(0);
-	//				JSONObject playerStats = a.getJSONObject(1);
-	//				System.out.println();
 					
 					Player player = new Player(a);
 					player.parsePlayerInfo();
-					player.save(conn);
-	//				player.parsePlayerSeasonStats();
+					
+					if(!player.exists(conn)) {
+						player.save(conn);
+					}
+					else {
+						logger.info(player.getName() + " already exists in the database, skipping...");
+					}
+						
+					PlayerSeasonStats.retrieveSeasonStats(year, player.getPlayerId(), conn);
+					PlayerWeekStats.retrieveWeeklyStats(year, player.getPlayerId(), conn);
 				}
 				
 				System.out.println();
@@ -157,6 +167,38 @@ public class Player {
 		}
 	}
 	
+	/**
+	 * Determines if the player already exists in the database.
+	 * 
+	 * @param conn
+	 * @return
+	 */
+	public boolean exists(Connection conn) {
+		PreparedStatement pstmt = null;
+		ResultSet rs = null;
+		
+		try {
+			pstmt = conn.prepareStatement("select * from players where id = ?");
+			pstmt.setInt(1, playerId);
+			rs = pstmt.executeQuery();
+			
+			return rs.next();
+		}
+		catch(SQLException e) {
+			logger.severe(e.getMessage());
+			e.printStackTrace();
+		}
+		finally {
+			try {
+				pstmt.close();
+				rs.close();
+			}
+			catch(SQLException e) {	}
+		}
+		
+		return false;
+	}
+	
 	public static ArrayList<Integer> getAllPlayerIds(Connection conn) {
 		long start = System.currentTimeMillis();
 		
@@ -200,5 +242,29 @@ public class Player {
 
 	public void setPlayer(JSONArray player) {
 		this.player = player;
+	}
+
+	public int getPlayerId() {
+		return playerId;
+	}
+
+	public void setPlayerId(int playerId) {
+		this.playerId = playerId;
+	}
+
+	public String getName() {
+		return name;
+	}
+
+	public void setName(String name) {
+		this.name = name;
+	}
+
+	public String getPosition() {
+		return position;
+	}
+
+	public void setPosition(String position) {
+		this.position = position;
 	}
 }
