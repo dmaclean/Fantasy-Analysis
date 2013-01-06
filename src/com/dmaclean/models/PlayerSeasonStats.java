@@ -5,6 +5,7 @@ import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.logging.Logger;
@@ -58,14 +59,23 @@ public class PlayerSeasonStats {
 		System.out.println();
 	}
 	
-	public static void retrieveSeasonStatsForAllPlayersForYear(int year, Connection conn) {
-		ArrayList<Integer> ids = Player.getAllPlayerIds(conn);
+	public static void retrieveSeasonStats(int year, int id, Connection conn) {
+		PlayerSeasonStats pss = new PlayerSeasonStats();
+		pss.setPlayerId(id);
+		pss.setYear(year);
+		
+		/*
+		 * Sanity check - do we already have this?
+		 */
+		if(pss.exists(conn)) {
+			logger.info("Season stats (" + year + ") for player " + id + " already exist.");
+			return;
+		}
 		
 		StHttpRequest httpRequest = new StHttpRequest();
 		
-		String yahooServer = "http://fantasysports.yahooapis.com/fantasy/v2/player/{year}.p.{player_id}/stats?format=json";
 		// Create final URL
-		String url = yahooServer;// + params;
+		String url = FantasyConstants.URL_SEASON_STATS;
 		
 		// Create oAuth Consumer 
 		OAuthConsumer consumer = new DefaultOAuthConsumer(FantasyConstants.consumer_key, FantasyConstants.consumer_secret);
@@ -73,27 +83,31 @@ public class PlayerSeasonStats {
 		// Set the HTTP request correctly
 		httpRequest.setOAuthConsumer(consumer);
 		
-		int count = -1;
-		int start = 0;
-		
 		try {
-			for(Integer id : ids) {
-				start = (count == -1) ? 0 : start + count;
-				url = yahooServer.replace("{player_id}", "" + id);
-				url = url.replace("{year}", FantasyConstants.yearToCode.get(year));
-				
+			url = url.replace("{player_id}", "" + id);
+			url = url.replace("{year}", FantasyConstants.yearToCode.get(year));
+			
+			int responseCode = -1;
+			
+			while(responseCode != FantasyConstants.HTTP_RESPONSE_OK) {
 				logger.info("sending get request to" + URLDecoder.decode(url, "UTF-8"));
-				int responseCode = httpRequest.sendGetRequest(url); 
+				responseCode = httpRequest.sendGetRequest(url); 
 				
 				// Send the request
 				if(responseCode == FantasyConstants.HTTP_RESPONSE_OK) {
 					logger.info("Response ");
 					
-					PlayerSeasonStats pss = new PlayerSeasonStats();
-					pss.setPlayerId(id);
-					pss.setYear(year);
 					pss.parsePlayerStats(httpRequest.getResponseBody());
 					pss.save(conn);
+				} else if(responseCode == 999) {
+					logger.severe("Error in response due to status code = " + responseCode + ".  Sleeping for 30 minutes.");
+					try {
+						Thread.sleep(1000*60*30);
+					}
+					catch(InterruptedException e) {
+						logger.severe(e.getMessage());
+						e.printStackTrace();
+					}
 				} else {
 					logger.severe("Error in response due to status code = " + responseCode);
 				}
@@ -105,6 +119,14 @@ public class PlayerSeasonStats {
 			logger.severe("Error with HTTP IO - " + e.getMessage());
 		} catch (Exception e) {
 			logger.severe(httpRequest.getResponseBody() + " - " + e.getMessage());
+		}
+	}
+	
+	public static void retrieveSeasonStatsForAllPlayersForYear(int year, Connection conn) {
+		ArrayList<Integer> ids = Player.getAllPlayerIds(conn);
+
+		for(Integer id : ids) {
+			retrieveSeasonStats(year, id, conn);
 		}
 	}
 	
@@ -133,6 +155,33 @@ public class PlayerSeasonStats {
 				e.printStackTrace();
 			}
 		}
+	}
+	
+	public boolean exists(Connection conn) {
+		PreparedStatement pstmt = null;
+		ResultSet rs = null;
+		
+		try {
+			pstmt = conn.prepareStatement("select * from player_season_stats where player_id = ? and year = ?");
+			pstmt.setInt(1, playerId);
+			pstmt.setInt(2, year);
+			rs = pstmt.executeQuery();
+			
+			return rs.next();
+		}
+		catch(SQLException e) {
+			logger.severe(e.getMessage());
+			e.printStackTrace();
+		}
+		finally {
+			try {
+				pstmt.close();
+				rs.close();
+			}
+			catch(SQLException e) {	}
+		}
+		
+		return false;
 	}
 
 	public int getPlayerId() {

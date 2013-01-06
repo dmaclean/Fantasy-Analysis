@@ -3,10 +3,15 @@ package com.dmaclean.models;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
+import java.sql.Connection;
+import java.sql.SQLException;
+
 import org.json.JSONException;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+
+import com.dmaclean.testutils.FantasyTestUtils;
 
 public class TestPlayerSeasonStats {
 
@@ -14,6 +19,8 @@ public class TestPlayerSeasonStats {
 	
 	@Before
 	public void setUp() throws Exception {
+		FantasyTestUtils.resetTestDatabase();
+		
 		pss = new PlayerSeasonStats();
 	}
 
@@ -93,4 +100,56 @@ public class TestPlayerSeasonStats {
 		}
 	}
 
+	@Test
+	public void testExists_False() {
+		Connection conn = null;
+		
+		try {
+			conn = FantasyTestUtils.getTestConnection();
+			pss.setPlayerId(1);
+			pss.setYear(2012);
+			
+			assertTrue(!pss.exists(conn));
+		}
+		catch(Exception e) {
+			fail(e.getMessage());
+		}
+		finally {
+			try {
+				conn.close();
+			}
+			catch(SQLException e) {
+				e.printStackTrace();
+			}
+		}
+	}
+	
+	@Test
+	public void testExists_True() {
+		Connection conn = null;
+		
+		try {
+			conn = FantasyTestUtils.getTestConnection();
+			pss.setPlayerId(1);
+			pss.setYear(2012);
+			pss.save(conn);
+			
+			PlayerSeasonStats pss2 = new PlayerSeasonStats();
+			pss2.setPlayerId(1);
+			pss2.setYear(2012);
+			
+			assertTrue(pss2.exists(conn));
+		}
+		catch(Exception e) {
+			fail(e.getMessage());
+		}
+		finally {
+			try {
+				conn.close();
+			}
+			catch(SQLException e) {
+				e.printStackTrace();
+			}
+		}
+	}
 }
