@@ -56,6 +56,10 @@ public class FantasyConstants {
 	
 	public static final int HTTP_RESPONSE_OK = 200;
 	
+	public static final String URL_SEASON_STATS = "http://fantasysports.yahooapis.com/fantasy/v2/player/{year}.p.{player_id}/stats?format=json";
+	public static final String URL_SEASON_ALL_PLAYERS = "http://fantasysports.yahooapis.com/fantasy/v2/league/{league_key}/players;start={start}/stats?format=json";
+	public static final String URL_WEEK_STATS = "http://fantasysports.yahooapis.com/fantasy/v2/player/{year}.p.{player_id}/stats;type=week;week={week}?format=json";
+	
 	public static final int STAT_GAMES_PLAYED = 0;
 	public static final int STAT_PASSING_ATTEMPTS = 1;
 	public static final int STAT_COMPLETIONS = 2;
