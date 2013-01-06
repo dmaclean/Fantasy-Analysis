@@ -114,4 +114,59 @@ public class TestPlayerWeekStats {
 		}
 	}
 
+	@Test
+	public void testExists_False() {
+		Connection conn = null;
+		
+		try {
+			conn = FantasyTestUtils.getTestConnection();
+			pws.setPlayerId(1);
+			pws.setWeek(2);
+			pws.setYear(2012);
+			
+			assertTrue(!pws.exists(conn));
+		}
+		catch(Exception e) {
+			fail(e.getMessage());
+		}
+		finally {
+			try {
+				conn.close();
+			}
+			catch(SQLException e) {
+				e.printStackTrace();
+			}
+		}
+	}
+	
+	@Test
+	public void testExists_True() {
+		Connection conn = null;
+		
+		try {
+			conn = FantasyTestUtils.getTestConnection();
+			pws.setPlayerId(1);
+			pws.setWeek(2);
+			pws.setYear(2012);
+			pws.save(conn);
+			
+			PlayerWeekStats pws2 = new PlayerWeekStats();
+			pws2.setPlayerId(1);
+			pws2.setWeek(2);
+			pws2.setYear(2012);
+			
+			assertTrue(pws2.exists(conn));
+		}
+		catch(Exception e) {
+			fail(e.getMessage());
+		}
+		finally {
+			try {
+				conn.close();
+			}
+			catch(SQLException e) {
+				e.printStackTrace();
+			}
+		}
+	}
 }
