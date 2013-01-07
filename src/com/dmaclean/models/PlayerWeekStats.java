@@ -77,10 +77,10 @@ public class PlayerWeekStats extends PlayerSeasonStats {
 					}
 				}
 				else if(responseCode == 999) {
-					logger.severe("Error in response due to status code = " + responseCode + ".  Sleeping for 30 minutes.");
+					logger.severe("Error in response due to status code = " + responseCode + ".  Sleeping for 10 minutes.");
 					
 					try {
-						Thread.sleep(1000*60*30);
+						Thread.sleep(FantasyConstants.ERROR_999_TIMEOUT_MILLISECONDS);
 					}
 					catch(InterruptedException e) {
 						e.printStackTrace();
