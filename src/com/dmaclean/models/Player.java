@@ -78,7 +78,7 @@ public class Player {
 				
 				int responseCode = -1;
 				while(responseCode != FantasyConstants.HTTP_RESPONSE_OK) {
-					logger.info("sending get request to" + URLDecoder.decode(url, "UTF-8"));
+					logger.info("sending get request to " + URLDecoder.decode(url, "UTF-8"));
 					responseCode = httpRequest.sendGetRequest(url); 
 					
 					// Send the request

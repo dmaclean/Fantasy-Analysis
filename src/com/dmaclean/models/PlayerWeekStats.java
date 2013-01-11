@@ -62,8 +62,6 @@ public class PlayerWeekStats extends PlayerSeasonStats {
 				
 				// Send the request
 				if(responseCode == FantasyConstants.HTTP_RESPONSE_OK) {
-					logger.info("Response ");
-					
 					pws.parsePlayerStats(httpRequest.getResponseBody());
 					pws.save(conn);
 					
