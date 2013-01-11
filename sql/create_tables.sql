@@ -10,7 +10,8 @@ create table player_season_stats (
 	player_id int not null,
 	stat_id int not null,
 	year int not null,
-	foreign key (stat_id) references stats(id)
+	foreign key (stat_id) references stats(id),
+	foreign key (player_id) references players(id)
 );
 CREATE UNIQUE INDEX player_season_stats_idx ON player_season_stats (player_id, stat_id, year);
 
@@ -19,7 +20,9 @@ create table player_week_stats (
 	player_id int not null,
 	stat_id int not null,
 	year int not null,
-	week int not null
+	week int not null,
+	foreign key (stat_id) references stats(id),
+	foreign key (player_id) references players(id)
 );
 CREATE UNIQUE INDEX player_week_stats_idx ON player_week_stats (player_id, stat_id, year, week);
 
