@@ -3,7 +3,6 @@ package com.dmaclean.testutils;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
-import java.io.IOException;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
@@ -87,6 +86,21 @@ public class FantasyTestUtils {
 		
 		long end = System.currentTimeMillis();
 		logger.info("Reset test database in " + (end-start)/1000.0 + " seconds.");
+	}
+	
+	public static String readTestFile(String file) {
+		try {
+			BufferedReader r = new BufferedReader(new FileReader(new File("test_data/" + file)));
+			StringBuffer sb = new StringBuffer();
+			String s = null;
+			while( (s = r.readLine()) != null) 		sb.append(s);
+			
+			return sb.toString();
+		}
+		catch(Exception e) {
+			e.printStackTrace();
+			return "";
+		}
 	}
 	
 	public static void main(String[] args) {

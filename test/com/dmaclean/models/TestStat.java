@@ -30,68 +30,62 @@ public class TestStat {
 	public void tearDown() throws Exception {
 		stat = null;
 	}
-
+	
 	@Test
-	public void testAddValue() {
-		stat.addValue(FantasyConstants.STAT_BLOCK_KICK, 1);
+	public void testGetSaveDeleteExists() {
+		Connection conn = FantasyTestUtils.getTestConnection();
 		
-		assertTrue(stat.getValue(FantasyConstants.STAT_BLOCK_KICK) == 1);
-	}
-
-	@Test
-	public void testGetSave() {
-		Connection conn = null;
+		PreparedStatement pstmt = null;
+		ResultSet rs = null;
 		
 		try {
-			conn = FantasyTestUtils.getTestConnection();
+			Player p = new Player();
+			p.setName("Dan MacLean");
+			p.setPlayerId(1);
+			p.setPosition("QB");
+			p.save(conn);
 			
-			stat.addValue(FantasyConstants.STAT_BLOCK_KICK, 1);
-			stat.save(conn);
+			Stat s = new Stat();
+			s.setId(1);
+			s.setPlayerId(p.getPlayerId());
+			s.setSeason(2001);
+			s.setWeek(-1);
+			s.setStatKey(1);
+			s.setStatValue(10);
+			assertTrue(!s.exists(conn));
+			s.save(conn);
+			assertTrue(s.exists(conn));
 			
-			Stat newStat = new Stat();
-			newStat.get(stat.getId(), conn);
+			Stat s2 = new Stat();
+			s2.get(s.getId(), conn);
 			
-			assertTrue(newStat.getId() == stat.getId());
-			for(int i=0; i<78; i++) {
-				if(i == FantasyConstants.STAT_BLOCK_KICK) {
-					assertTrue(newStat.getValue(i) == 1);
-				}
-				else {
-					assertTrue(newStat.getValue(i) == -1);
-				}
-			}
+			assertTrue(s2.getId() == s.getId());
+			assertTrue(s2.getPlayerId() == s.getPlayerId());
+			assertTrue(s2.getSeason() == s.getSeason());
+			assertTrue(s2.getWeek() == s.getWeek());
+			assertTrue(s2.getStatKey() == s.getStatKey());
+			assertTrue(s2.getStatValue() == s.getStatValue());
 			
-			stat.delete(stat.getId(), conn);
+			s.delete(s.getId(), conn);
 			
-			PreparedStatement pstmt = null;
-			ResultSet rs = null;
+			pstmt = conn.prepareStatement("select * from stats where id = ?");
+			pstmt.setInt(1, s2.getId());
+			rs = pstmt.executeQuery();
 			
-			try {
-				pstmt = conn.prepareStatement("select * from stats");
-				rs = pstmt.executeQuery();
-				
-				assertTrue(!rs.next());
-			}
-			catch(SQLException e) {
-				fail(e.getMessage());
-			}
-			finally {
-				try {
-					pstmt.close();
-				}
-				catch(SQLException e) {}
-			}
-		} catch (Exception e) {
-			e.printStackTrace();
+			assertTrue(!rs.next());
+			
+		}
+		catch(Exception e) {
 			fail(e.getMessage());
 		}
 		finally {
 			try {
+				pstmt.close();
+				rs.close();
 				conn.close();
 			}
-			catch(SQLException e) {
-				e.printStackTrace();
-			}
+			catch(SQLException e) {}
 		}
 	}
+
 }
