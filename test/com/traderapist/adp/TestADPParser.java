@@ -121,7 +121,7 @@ public class TestADPParser {
 			green.setPosition("RB");
 			green.save(conn);
 			
-			parser.writeToDatabase(conn, results);
+			parser.processMyFantasyLeagueData(results, conn);
 			
 			PreparedStatement pstmt = null;
 			ResultSet rs = null;

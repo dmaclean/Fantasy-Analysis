@@ -18,14 +18,16 @@ public class ADPParser {
 
 	private static final Logger logger = Logger.getLogger(ADPParser.class.getPackage().getName());
 	
-//	public static final String TYPE_MY_FANTASY_LEAGUE = "MY_FANTASY_LEAGUE";
-	
-//	public static final String TYPE_FANTASY_FOOTBALL_CALCULATOR = "FANTASY_FOOTBALL_CALCULATOR";
-	
-//	private String type;
-	
+	/**
+	 * The season we are parsing ADP for.
+	 */
 	private int season;
 	
+	/**
+	 * A translation table between the team abbreviations in the input files and
+	 * the abbreviation column in the teams table.  This helps us fetch the correct
+	 * row so we can write the correct team_id value into team_memberships.
+	 */
 	private static HashMap<String, String> teamTranslation = new HashMap<String, String>();
 	static {
 		teamTranslation.put("ATL", "ATL");
@@ -63,36 +65,22 @@ public class ADPParser {
 		
 	}
 	
-//	private final String myFantasyLeagueTeamNameRegex = 
-//										 "Falcons|Bills|Bears|Bengals|Browns|Cowboys|Broncos|Lions|Packers|" +
-//										 "Titans|Colts|Chiefs|Raiders|Rams|Dolphins|Vikings|Patriots|Saints|" +
-//										 "Giants|Eagles|Cardinals|Steelers|Chargers|49ers|Seahawks|Buccaneers|" +
-//										 "Redskins|Panthers|Jaguars|Ravens|Texans";
-	
-//	private final String fantasyFootballCalculatorTeamNameRegex = 
-//							 "Falcons|Bills|Bears|Bengals|Browns|Cowboys|Broncos|Lions|Packers|" +
-//							 "Titans|Colts|Chiefs|Raiders|Rams|Dolphins|Vikings|Patriots|Saints|" +
-//							 "Giants|Eagles|Cardinals|Steelers|Chargers|49ers|Seahawks|Buccaneers|" +
-//							 "Redskins|Panthers|Jaguars|Ravens|Texans";
-	
 	public ADPParser() {}
 	
 	public ADPParser(int season) {
 		this.season = season;
 	}
 	
-	public void writeToDatabase(Connection conn, ArrayList<String[]> results) {
-//		if(results.get(0)[0].equals(TYPE_MY_FANTASY_LEAGUE)) {
-			processMyFantasyLeagueData(results, conn);
-//		}
-//		else if(results.get(0)[0].equals(TYPE_FANTASY_FOOTBALL_CALCULATOR)) {
-//			processFantasyFootballCalculatorData(results, conn);
-//		}
-	}
-
-	private void processMyFantasyLeagueData(ArrayList<String[]> results, Connection conn) {
-//		Pattern p = Pattern.compile(myFantasyLeagueTeamNameRegex);
-		
+	/**
+	 * Processes the ArrayList we got from reading the input file.  This grabs the
+	 * relevant data, performs some logic to get the correct player name and team
+	 * abbreviation, then creates entries in the average_draft_positions and 
+	 * team_memberships tables.
+	 * 
+	 * @param results		The ArrayList produced from parse().
+	 * @param conn			Database connection
+	 */
+	public void processMyFantasyLeagueData(ArrayList<String[]> results, Connection conn) {
 		for(String[] line : results) {
 			if(line[0].matches("#")) {
 				continue;
@@ -110,11 +98,10 @@ public class ADPParser {
 			/*
 			 * Check if we're dealing with a team instead of a player.
 			 */
-//			Matcher m = p.matcher(name);
-			if(/*m.find() &&*/ line.length == 9 && line[4].equals("Def")) {
+			if(line.length == 9 && line[4].equals("Def")) {
 				name = line[2];
 			}
-			else if(/*m.find() &&*/ line.length == 10 && line[5].equals("Def")) {
+			else if(line.length == 10 && line[5].equals("Def")) {
 				name = line[2] + " " + line[3];
 				team = line[4];
 				adp = Double.parseDouble(line[6]);
@@ -128,36 +115,14 @@ public class ADPParser {
 		}
 	}
 	
-//	private void processFantasyFootballCalculatorData(ArrayList<String[]> results, Connection conn) {
-//		Pattern p = Pattern.compile(fantasyFootballCalculatorTeamNameRegex);
-//		
-//		for(String[] line : results) {
-//			if(line[0].matches(TYPE_FANTASY_FOOTBALL_CALCULATOR + "|rank")) {
-//				continue;
-//			}
-//			
-//			String name = line[2] + " " + line[3];
-//			String team = line[4];
-//			
-//			/*
-//			 * Check if we're dealing with a team instead of a player.
-//			 */
-//			Matcher m = p.matcher(name);
-//			if(m.find() && line.length == 10) {
-//				name = line[2];
-//			}
-//			else if(m.find() && line.length == 11) {
-//				name = line[2] + " " + line[3];
-//				team = line[5];
-//			}
-//			
-//			Object playerInfo = getPlayerInfo(conn, name);
-//			if(playerInfo != null) {
-//				
-//			}
-//		}
-//	}
-	
+	/**
+	 * Insert a row in the average_draft_positions table for the currently-processed player.
+	 * 
+	 * @param conn			Database connection
+	 * @param playerId		The player id (from players table).
+	 * @param season		The season we are processing for.
+	 * @param adp			The ADP value for this player.
+	 */
 	private void insertAverageDraftPosition(Connection conn, int playerId, int season, double adp) {
 		PreparedStatement pstmt = null;
 		
@@ -181,6 +146,17 @@ public class ADPParser {
 		}
 	}
 	
+	/**
+	 * Insert a row in the team_memberships table.  If the team is null (will happen when
+	 * a player is listed as a free agent (FA) or some other designation that is not a
+	 * valid team) then we will log this and return immediately without writing to the
+	 * database.
+	 * 
+	 * @param conn			Database connection.
+	 * @param playerId		The player id (from players table).
+	 * @param season		The season we are processing for.
+	 * @param team			The team this player belongs to.
+	 */
 	private void insertTeamMembership(Connection conn, int playerId, int season, String team) {
 		if(team == null) {
 			logger.severe("Could not find a team association for player " + playerId);
@@ -210,6 +186,15 @@ public class ADPParser {
 		}
 	}
 	
+	/**
+	 * Get the id of the row from teams table based on which abbreviation our specified
+	 * "team" argument matches.
+	 * 
+	 * @param conn		Database connection.
+	 * @param team		The abbreviation of the team we want the id for.
+	 * @return			The primary key of a matching row if one is found.  -1 otherwise.
+	 * @throws Exception
+	 */
 	private int getTeamId(Connection conn, String team) throws Exception {
 		PreparedStatement pstmt = null;
 		ResultSet rs = null;
@@ -243,9 +228,9 @@ public class ADPParser {
 	/**
 	 * Retrieve a player's information from the players table.
 	 * 
-	 * @param conn
-	 * @param name
-	 * @return
+	 * @param conn		Database connection.
+	 * @param name		The name to look for.
+	 * @return			An Object array containing the values { <player id>, <player name>, <player position> }
 	 */
 	private Object[] getPlayerInfo(Connection conn, String name) {
 		PreparedStatement pstmt = null;
@@ -289,6 +274,15 @@ public class ADPParser {
 		return teamTranslation.get(myFantasyLeagueAbbreviation);
 	}
 	
+	/**
+	 * Reads in the input file, parses each line out into String arrays, and adds each to
+	 * an ArrayList that will be used in further processing.
+	 * 
+	 * @param filename		The file (including path) to parse.
+	 * @return				An ArrayList containing String[] for each line.
+	 * @throws FileNotFoundException
+	 * @throws IOException
+	 */
 	public ArrayList<String[]> parse(String filename) throws FileNotFoundException, IOException {
 		File f = new File(filename);
 		BufferedReader reader = new BufferedReader(new FileReader(f));
@@ -302,10 +296,7 @@ public class ADPParser {
 		ArrayList<String[]> results = new ArrayList<String[]>();
 		for(String line : contents) {
 			results.add(line.split("\\s"));
-//			String name = pieces[2] + " " + pieces[1].replace(",", "");
 		}
-		
-//		type = results.get(0)[0];
 		
 		return results;
 	}
@@ -326,7 +317,7 @@ public class ADPParser {
 			conn = DriverManager.getConnection(url+dbName,userName,password);
 			
 			ArrayList<String[]> results = parser.parse(args[0]);
-			parser.writeToDatabase(conn, results);
+			parser.processMyFantasyLeagueData(results, conn);
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
