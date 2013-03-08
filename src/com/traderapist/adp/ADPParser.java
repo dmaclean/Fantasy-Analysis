@@ -127,10 +127,19 @@ public class ADPParser {
 		PreparedStatement pstmt = null;
 		
 		try {
-			pstmt = conn.prepareStatement("insert into average_draft_positions (player_id, season, adp) values (?,?,?)");
-			pstmt.setInt(1, playerId);
-			pstmt.setInt(2, season);
-			pstmt.setDouble(3, adp);
+			if(isDuplicate(conn, "average_draft_positions", playerId, season)) {
+				logger.info("Player " + playerId + " is a duplicate.  Updating...");
+				pstmt = conn.prepareStatement("update average_draft_positions set adp = ? where player_id = ? and season = ?");
+				pstmt.setDouble(1, adp);
+				pstmt.setInt(2, playerId);
+				pstmt.setInt(3, season);
+			}
+			else {
+				pstmt = conn.prepareStatement("insert into average_draft_positions (player_id, season, adp) values (?,?,?)");
+				pstmt.setInt(1, playerId);
+				pstmt.setInt(2, season);
+				pstmt.setDouble(3, adp);
+			}
 			
 			pstmt.execute();
 		}
@@ -166,10 +175,19 @@ public class ADPParser {
 		PreparedStatement pstmt = null;
 		
 		try {
-			pstmt = conn.prepareStatement("insert into team_memberships (player_id, season, team_id) values (?,?,?)");
-			pstmt.setInt(1, playerId);
-			pstmt.setInt(2, season);
-			pstmt.setInt(3, getTeamId(conn, team));
+			if(isDuplicate(conn, "team_memberships", playerId, season)) {
+				logger.info("Player " + playerId + " is a duplicate.  Updating...");
+				pstmt = conn.prepareStatement("update team_memberships set team_id = ? where player_id = ? and season = ?");
+				pstmt.setInt(1, getTeamId(conn, team));
+				pstmt.setInt(2, playerId);
+				pstmt.setInt(3, season);
+			}
+			else {
+				pstmt = conn.prepareStatement("insert into team_memberships (player_id, season, team_id) values (?,?,?)");
+				pstmt.setInt(1, playerId);
+				pstmt.setInt(2, season);
+				pstmt.setInt(3, getTeamId(conn, team));
+			}
 			
 			pstmt.execute();
 		}
@@ -184,6 +202,52 @@ public class ADPParser {
 				e.printStackTrace();
 			}
 		}
+	}
+	
+	/**
+	 * Determines if the player in question already exists in either the team_memberships
+	 * or average_draft_positions tables.
+	 * 
+	 * @param conn			The database connection.
+	 * @param type			The table we're interested in.  One of "team_memberships" or "average_draft_positions".
+	 * @param playerId		The id of the player we're checking.
+	 * @param season		The season we're checking.
+	 * @return				True, if a row for the player/season combination already exists.  False, otherwise.
+	 */
+	private boolean isDuplicate(Connection conn, String type, int playerId, int season) {
+		PreparedStatement pstmt = null;
+		ResultSet rs = null;
+		
+		try {
+			if(type.equals("team_memberships")) {
+				pstmt = conn.prepareStatement("select count(*) from team_memberships where player_id = ? and season = ?");
+			}
+			else if(type.equals("average_draft_positions")) {
+				pstmt = conn.prepareStatement("select count(*) from average_draft_positions where player_id = ? and season = ?");
+			}
+			pstmt.setInt(1, playerId);
+			pstmt.setInt(2, season);
+			
+			rs = pstmt.executeQuery();
+			
+			if(rs.next()) {
+				return rs.getInt(1) == 1;
+			}
+		}
+		catch(Exception e) {
+			logger.severe("Failed to insert team membership for player " + playerId);
+			e.printStackTrace();
+		}
+		finally {
+			try {
+				pstmt.close();
+				rs.close();
+			} catch (SQLException e) {
+				e.printStackTrace();
+			}
+		}
+		
+		return false;
 	}
 	
 	/**
@@ -302,7 +366,7 @@ public class ADPParser {
 	}
 	
 	public static void main(String[] args) {
-		ADPParser parser = new ADPParser(2001);
+		ADPParser parser = new ADPParser(Integer.parseInt(args[1]));
 		
 		Connection conn = null;
 		

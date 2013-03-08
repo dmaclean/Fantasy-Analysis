@@ -43,8 +43,6 @@ public class TestADPParser {
 			conn = FantasyTestUtils.getTestConnection();
 			ArrayList<String[]> results = parser.parse(testDataPath + "adp_2001_myfantasyleague.txt");
 			
-//			assertTrue(results.get(0)[0].equals(ADPParser.TYPE_MY_FANTASY_LEAGUE));
-			
 			// First player
 			//1.	Faulk, Marshall STL RB	2.07	1	15	449
 			assertTrue(results.get(1)[0].equals("1.") &&
@@ -198,7 +196,7 @@ public class TestADPParser {
 					
 					assertTrue(adpPlayerId == tampa.getPlayerId());
 					assertTrue(adpSeason == 2001);
-					assertTrue(adp == 65.95);
+					assertTrue(adp == 70.82);
 					assertTrue(tmPlayerId == tampa.getPlayerId());
 					assertTrue(tmSeason == 2001);
 					assertTrue(tmTeam == 27);
@@ -259,7 +257,7 @@ public class TestADPParser {
 			}
 		}
 	}
-
+	
 	@Test
 	public void testTeamTranslation() {
 		String[] value = {
