@@ -5,18 +5,16 @@ import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
 import java.sql.Connection;
 import java.sql.DriverManager;
-import java.util.ArrayList;
-import java.util.HashMap;
+import java.util.logging.Logger;
 
 import oauth.signpost.OAuthConsumer;
 import oauth.signpost.basic.DefaultOAuthConsumer;
 
-import org.apache.log4j.Logger;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
 import com.dmaclean.models.Player;
-import com.dmaclean.models.PlayerSeasonStats;
+import com.dmaclean.models.TeamMembership;
 
 
 /**
@@ -30,24 +28,32 @@ import com.dmaclean.models.PlayerSeasonStats;
  */
 public class SignPostTest {
 
-	private static HashMap<String, String> yearCodeMap;
-	static {
-		yearCodeMap = new HashMap<String, String>();
-		yearCodeMap.put("2009", "223");
-	}
+//	private static HashMap<String, String> yearCodeMap;
+//	static {
+//		yearCodeMap = new HashMap<String, String>();
+//		yearCodeMap.put("2009", "223");
+//	}
 	
-	private static final Logger log = Logger.getLogger(SignPostTest.class);
+	private static final Logger logger = Logger.getLogger(SignPostTest.class.getPackage().getName());
 // 714409
 	
 	/**
 	 * Get all players in the league
 	 */
 //	protected static String yahooServer = "http://fantasysports.yahooapis.com/fantasy/v2/league/223.l.431/players;start={start}/stats?format=json";
-	protected static String yahooServer = "http://fantasysports.yahooapis.com/fantasy/v2/player/223.p.5479/stats;type=week;week=1?format=json";
+	
+	/**
+	 * Get player stats for week 1 of 2009 season.
+	 */
+//	protected static String yahooServer = "http://fantasysports.yahooapis.com/fantasy/v2/player/223.p.5479/stats;type=week;week=1?format=json";
+	protected static String yahooServer = "http://fantasysports.yahooapis.com/fantasy/v2/player/79.p.70/stats;type=week;week=1?format=json";
+	
+	/**
+	 * Get NFL stat categories.
+	 */
 //	protected static String yahooServer = "http://fantasysports.yahooapis.com/fantasy/v2/game/nfl/stat_categories";
 	
 	
-
 	// Please provide your consumer key here
 	private static String consumer_key = "dj0yJmk9Y2RLeUNiTkdPeUxTJmQ9WVdrOVozZzRjSGhETTJNbWNHbzlOemt6TnpNMk1nLS0mcz1jb25zdW1lcnNlY3JldCZ4PWYy";
 
@@ -93,19 +99,19 @@ public class SignPostTest {
 			try {
 				url = url.replace("{start}", "0");
 				
-				log.info("sending get request to" + URLDecoder.decode(url, ENCODE_FORMAT));
+				logger.info("sending get request to" + URLDecoder.decode(url, ENCODE_FORMAT));
 				int responseCode = httpRequest.sendGetRequest(url); 
 				
 				// Send the request
 				if(responseCode == HTTP_STATUS_OK) {
-					log.info("Response ");
+					logger.info("Response ");
 				} else {
-					log.error("Error in response due to status code = " + responseCode);
+					logger.severe("Error in response due to status code = " + responseCode);
 				}
-				log.info(httpRequest.getResponseBody());
+				logger.info(httpRequest.getResponseBody());
 				
-				PlayerSeasonStats pss = new PlayerSeasonStats();
-				pss.parsePlayerSeasonStats(httpRequest.getResponseBody());
+//				PlayerSeasonStats pss = new PlayerSeasonStats();
+//				pss.parsePlayerStats(httpRequest.getResponseBody());
 				
 				if(1==1) return 1;
 				
@@ -124,24 +130,24 @@ public class SignPostTest {
 //					JSONObject playerStats = a.getJSONObject(1);
 //					System.out.println();
 					
-					Player player = new Player(a);
+					Player player = new Player();
 					
-					player.parsePlayerInfo();
+					player.parsePlayerInfo(a);
 					
 				}
 				
 				System.out.println();
 				
 			} catch(UnsupportedEncodingException e) {
-				log.error("Encoding/Decording error");
+				logger.severe("Encoding/Decording error");
 			} catch (IOException e) {
-				log.error("Error with HTTP IO", e);
+				logger.severe("Error with HTTP IO: " + e.getMessage());
 			} catch (Exception e) {
-				log.error(httpRequest.getResponseBody(), e);
+				logger.severe(httpRequest.getResponseBody() + ": " + e.getMessage());
 				return 0;
 			}
 		} else {
-			log.error("Key/Secret does not exist");
+			logger.severe("Key/Secret does not exist");
 		}
 		return 1;
 	}
@@ -152,7 +158,7 @@ return "Yahoo";
 
 private boolean isConsumerKeyExists() {
 if(consumer_key.isEmpty()) {
-log.error("Consumer Key is missing. Please provide the key");
+logger.severe("Consumer Key is missing. Please provide the key");
 return false;
 }
 return true;
@@ -160,7 +166,7 @@ return true;
 
 private boolean isConsumerSecretExists() {
 if(consumer_secret.isEmpty()) {
-log.error("Consumer Secret is missing. Please provide the key");
+logger.severe("Consumer Secret is missing. Please provide the key");
 return false;
 }
 return true;
@@ -194,24 +200,28 @@ return true;
 				if(autoCommit) {
 					conn.setAutoCommit(false);
 				}
-				log.info("Connected to the database");
+				logger.info("Connected to the database");
 				
 //				Player.retrieveAllPlayersForYear(2009, conn);
 //				PlayerSeasonStats.retrieveSeasonStatsForAllPlayersForYear(2009, conn);
+//				PlayerWeekStats.retrieveWeeklyStatsForAllPlayersForYear(2009, conn);
 				
+//				Player.retrieveAllPlayersForYear(2003, conn);
+				
+//				TeamMembership.retrieveTeamMemberships(conn, 2001);
 				
 //				conn.commit();
 			} catch (Exception e) {
-				log.error(e);
+				logger.severe(e.getMessage());
 			}
 			finally {
 				if(autoCommit)
 					conn.setAutoCommit(true);
 				conn.close();
-				log.info("Disconnected from database");
+				logger.info("Disconnected from database");
 			}
 		} catch (Exception e) {
-			log.info("Error", e);
+			logger.info("Error - " + e.getMessage());
 		}
 	}
 
