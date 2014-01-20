@@ -10,3 +10,4 @@ Current components are:
 Fetching Statistics
 -------------------
 This component provides automated fetching of Yahoo Fantasy Football statistics.  For any given year (2001 - present) we can fetch all players that participated that year.  From here, the players information can be stored in the database.  Then, their season and weekly stats are fetched and also stored in the database.  This action only needs to be performed once.
+The application can also be executed with specific years and weeks so only the latest data is retrieved.
